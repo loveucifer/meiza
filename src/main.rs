@@ -4,7 +4,8 @@ fn main() {
     println!("Hello, meiza!");
 
     let cdl = r#"
-          R1 resistor 1k
+          R1 resistor 1k (0, 0)
+          R2 resistor 2k (50, 0)
           R1.2 -> R2.1
       "#;
 
