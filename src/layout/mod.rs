@@ -1,5 +1,5 @@
 use crate::components::get_component_template;
-use crate::parser::{Circuit, Component};
+use crate::parser::{Circuit, Component, Connection, ConnectionPoint};
 use anyhow::anyhow;
 use std::collections::HashMap;
 
