@@ -1,0 +1,13 @@
+# Simple LED circuit with current limiting resistor
+# This circuit connects a 5V source to an LED through a resistor
+
+V1 dc_voltage 5V (0, 0) text="5V Supply"
+R1 resistor 330 (50, 0) text="Current Limiting Resistor"
+D1 led (100, 0) text="Red LED"
+GND1 signal_ground (150, 30) text="Ground"
+
+# Connections
+V1.+ -> R1.1
+R1.2 -> D1.A
+D1.K -> GND1.GND
+V1.- -> GND1.GND

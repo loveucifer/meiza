@@ -1,0 +1,29 @@
+# Common Emitter Amplifier
+# Basic NPN transistor amplifier circuit
+
+VCC dc_voltage 12V (0, 0) text="Supply Voltage"
+C1 capacitor 10uF (50, 0) text="Input Coupling"
+Q1 npn_transistor (100, 0) text="Amplifying Transistor"
+R1 resistor 22k (150, -30) text="Base Bias"
+R2 resistor 10k (150, 30) text="Base Bias"
+R3 resistor 1k (200, 0) text="Collector Load"
+R4 resistor 1k (250, 50) text="Emitter Resistor"
+C2 capacitor 100uF (300, 50) text="Emitter Bypass"
+C3 capacitor 10uF (200, -50) text="Output Coupling"
+GND signal_ground (250, 100) text="Ground"
+
+# Connections
+VCC.+ -> R1.1
+R1.2 -> Q1.B
+R2.1 -> Q1.B
+VCC.+ -> R3.1
+R3.2 -> Q1.C
+Q1.E -> R4.1
+R2.2 -> GND.GND
+R4.2 -> C2.1
+C2.2 -> GND.GND
+C1.1 -> signal_in  # Input connection point
+C1.2 -> Q1.B
+Q1.C -> C3.1
+C3.2 -> signal_out  # Output connection point
+VCC.- -> GND.GND
