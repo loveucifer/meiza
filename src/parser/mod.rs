@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use pest::Parser;
 use pest_derive::Parser;
 use std::collections::HashMap;
@@ -122,9 +123,8 @@ pub enum AstNode {
     Net(Net),
 }
 
-pub fn parse_cdl(input: &str) -> Result<Circuit, Box<dyn std::error::Error>> {
-    let pairs = CdlParser::parse(Rule::circuit, input)
-        .map_err(|e| format!("Parse error: {}", e))?;
+pub fn parse_cdl(input: &str) -> anyhow::Result<Circuit> {
+    let pairs = CdlParser::parse(Rule::circuit, input)?;
 
     let mut components = Vec::new();
     let mut connections = Vec::new();
@@ -145,7 +145,7 @@ pub fn parse_cdl(input: &str) -> Result<Circuit, Box<dyn std::error::Error>> {
                 nets.push(net);
             }
             Rule::EOI => (),
-            _ => return Err(format!("Unexpected rule: {:?}", pair.as_rule()).into()),
+            _ => return Err(anyhow!("Unexpected rule: {:?}", pair.as_rule())),
         }
     }
 
@@ -156,7 +156,7 @@ pub fn parse_cdl(input: &str) -> Result<Circuit, Box<dyn std::error::Error>> {
     })
 }
 
-fn parse_component(pair: pest::iterators::Pair<Rule>) -> Result<Component, Box<dyn std::error::Error>> {
+fn parse_component(pair: pest::iterators::Pair<Rule>) -> anyhow::Result<Component> {
     let mut component_id = String::new();
     let mut component_type = ComponentType::Resistor; // default
     let mut value = None;
@@ -204,9 +204,9 @@ fn parse_component(pair: pest::iterators::Pair<Rule>) -> Result<Component, Box<d
     })
 }
 
-fn parse_component_type(pair: pest::iterators::Pair<Rule>) -> Result<ComponentType, Box<dyn std::error::Error>> {
+fn parse_component_type(pair: pest::iterators::Pair<Rule>) -> Result<ComponentType> {
     let type_str = pair.as_str().to_lowercase();
-    
+
     match type_str.as_str() {
         "resistor" | "r" => Ok(ComponentType::Resistor),
         "capacitor" | "c" => Ok(ComponentType::Capacitor),
@@ -260,52 +260,60 @@ fn parse_component_type(pair: pest::iterators::Pair<Rule>) -> Result<ComponentTy
         "signal_ground" | "sgnd" | "ground" | "gnd" => Ok(ComponentType::SignalGround),
         "chassis_ground" | "cgnd" => Ok(ComponentType::ChassisGround),
         "earth_ground" | "egnd" => Ok(ComponentType::EarthGround),
-        _ => Err(format!("Unknown component type: {}", type_str).into()),
+        _ => Err(anyhow!("Unknown component type: {}", type_str)),
     }
 }
 
-fn parse_position(pair: pest::iterators::Pair<Rule>) -> Result<(f64, f64), Box<dyn std::error::Error>> {
+fn parse_position(pair: pest::iterators::Pair<Rule>) -> Result<(f64, f64)> {
     let mut coords = pair.into_inner();
-    let x = coords.next().unwrap().as_str().parse::<f64>()
-        .map_err(|_| "Invalid X coordinate")?;
-    let y = coords.next().unwrap().as_str().parse::<f64>()
-        .map_err(|_| "Invalid Y coordinate")?;
+    let x = coords
+        .next()
+        .unwrap()
+        .as_str()
+        .parse::<f64>()
+        .map_err(|_| anyhow!("Invalid X coordinate"))?;
+    let y = coords
+        .next()
+        .unwrap()
+        .as_str()
+        .parse::<f64>()
+        .map_err(|_| anyhow!("Invalid Y coordinate"))?;
     Ok((x, y))
 }
 
-fn parse_rotation(pair: pest::iterators::Pair<Rule>) -> Result<Rotation, Box<dyn std::error::Error>> {
+fn parse_rotation(pair: pest::iterators::Pair<Rule>) -> Result<Rotation> {
     let rotation_str = pair.as_str();
     match rotation_str {
         "0" | "0deg" => Ok(Rotation::Deg0),
         "90" | "90deg" => Ok(Rotation::Deg90),
         "180" | "180deg" => Ok(Rotation::Deg180),
         "270" | "270deg" => Ok(Rotation::Deg270),
-        _ => Err(format!("Invalid rotation value: {}", rotation_str).into()),
+        _ => Err(anyhow!("Invalid rotation value: {}", rotation_str)),
     }
 }
 
-fn parse_property(pair: pest::iterators::Pair<Rule>) -> Result<(String, String), Box<dyn std::error::Error>> {
+fn parse_property(pair: pest::iterators::Pair<Rule>) -> Result<(String, String)> {
     let mut parts = pair.into_inner();
     let key = parts.next().unwrap().as_str().to_string();
     let value = parts.next().unwrap().as_str().to_string();
     Ok((key, value))
 }
 
-fn parse_connection(pair: pest::iterators::Pair<Rule>) -> Result<Connection, Box<dyn std::error::Error>> {
+fn parse_connection(pair: pest::iterators::Pair<Rule>) -> Result<Connection> {
     let mut conn_parts = pair.into_inner();
     let from_str = conn_parts.next().unwrap().as_str();
     let to_str = conn_parts.next().unwrap().as_str();
-    
+
     let from = parse_connection_point(from_str)?;
     let to = parse_connection_point(to_str)?;
-    
+
     // Handle properties if they exist
     let properties = if let Some(props) = conn_parts.next() {
         parse_connection_properties(props)?
     } else {
         HashMap::new()
     };
-    
+
     Ok(Connection {
         from,
         to,
@@ -313,36 +321,38 @@ fn parse_connection(pair: pest::iterators::Pair<Rule>) -> Result<Connection, Box
     })
 }
 
-fn parse_connection_point(point_str: &str) -> Result<ConnectionPoint, Box<dyn std::error::Error>> {
+fn parse_connection_point(point_str: &str) -> Result<ConnectionPoint> {
     // Format: component_id.pin
     let parts: Vec<&str> = point_str.split('.').collect();
     if parts.len() != 2 {
-        return Err(format!("Invalid connection point format: {}", point_str).into());
+        return Err(anyhow!("Invalid connection point format: {}", point_str));
     }
-    
+
     Ok(ConnectionPoint {
         component_id: parts[0].to_string(),
         pin: parts[1].to_string(),
     })
 }
 
-fn parse_connection_properties(pair: pest::iterators::Pair<Rule>) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+fn parse_connection_properties(
+    pair: pest::iterators::Pair<Rule>,
+) -> Result<HashMap<String, String>> {
     let mut properties = HashMap::new();
-    
+
     for inner_pair in pair.into_inner() {
         if inner_pair.as_rule() == Rule::property {
             let (key, val) = parse_property(inner_pair)?;
             properties.insert(key, val);
         }
     }
-    
+
     Ok(properties)
 }
 
-fn parse_net(pair: pest::iterators::Pair<Rule>) -> Result<Net, Box<dyn std::error::Error>> {
+fn parse_net(pair: pest::iterators::Pair<Rule>) -> Result<Net> {
     let mut name = String::new();
     let mut nodes = Vec::new();
-    
+
     for inner_pair in pair.into_inner() {
         match inner_pair.as_rule() {
             Rule::identifier => {
@@ -357,11 +367,8 @@ fn parse_net(pair: pest::iterators::Pair<Rule>) -> Result<Net, Box<dyn std::erro
             _ => {}
         }
     }
-    
-    Ok(Net {
-        name,
-        nodes,
-    })
+
+    Ok(Net { name, nodes })
 }
 
 #[cfg(test)]
@@ -376,7 +383,10 @@ mod tests {
         let circuit = result.unwrap();
         assert_eq!(circuit.components.len(), 1);
         assert_eq!(circuit.components[0].id, "R1");
-        assert!(matches!(circuit.components[0].component_type, ComponentType::Resistor));
+        assert!(matches!(
+            circuit.components[0].component_type,
+            ComponentType::Resistor
+        ));
         assert_eq!(circuit.components[0].value.as_ref().unwrap(), "1k");
     }
 

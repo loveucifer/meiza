@@ -61,11 +61,11 @@ import init, { parse_cdl_to_svg } from 'mieza';
 
 async function renderCircuit() {
     await init();
-    
+
     const cdl = `R1 resistor 1k (0, 0)
                  R2 resistor 2k (50, 0)
                  R1.2 -> R2.1`;
-                 
+
     const svg = parse_cdl_to_svg(cdl, "light", "ieee");
     document.getElementById('circuit').innerHTML = svg;
 }

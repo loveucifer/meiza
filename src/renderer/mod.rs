@@ -1,5 +1,5 @@
+use crate::layout::{Layout, Point, PositionedComponent, PositionedConnection, Rotation};
 use std::collections::HashMap;
-use crate::layout::{Layout, PositionedComponent, PositionedConnection, Point, Rotation};
 
 #[derive(Debug, Clone)]
 pub enum SvgTheme {
@@ -14,48 +14,44 @@ pub enum SvgStyle {
     Din,
 }
 
-pub fn render_to_svg(
-    layout: &Layout,
-    theme: SvgTheme,
-    style: SvgStyle,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub fn render_to_svg(layout: &Layout, theme: SvgTheme, style: SvgStyle) -> anyhow::Result<String> {
     let theme_colors = get_theme_colors(&theme);
     let style_class = match style {
         SvgStyle::Ieee => "ieee",
         SvgStyle::Iec => "iec",
         SvgStyle::Din => "din",
     };
-    
+
     let mut svg = String::new();
-    svg.push_str(&format!("<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"{}\" style=\"background-color: {}; color: {};\">\n", 
+    svg.push_str(&format!("<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"{}\" style=\"background-color: {}; color: {};\">\n",
         style_class, theme_colors.background, theme_colors.text));
-    
+
     // Add styles
     svg.push_str("<style>\n");
     svg.push_str(&format!(
-        ".wire {{ stroke: {}; stroke-width: 2; fill: none; }}\n", 
+        ".wire {{ stroke: {}; stroke-width: 2; fill: none; }}\n",
         theme_colors.wire
     ));
     svg.push_str(&format!(
-        ".component {{ stroke: {}; stroke-width: 2; fill: {}; }}\n", 
+        ".component {{ stroke: {}; stroke-width: 2; fill: {}; }}\n",
         theme_colors.component_stroke, theme_colors.component_fill
     ));
     svg.push_str(&format!(
-        ".text {{ fill: {}; font-family: Arial, sans-serif; font-size: 12px; }}\n", 
+        ".text {{ fill: {}; font-family: Arial, sans-serif; font-size: 12px; }}\n",
         theme_colors.text
     ));
     svg.push_str("</style>\n");
-    
+
     // Render components
     for component in &layout.components {
         svg.push_str(&render_component(component, &theme_colors, &style)?);
     }
-    
+
     // Render connections (wires)
     for connection in &layout.connections {
         svg.push_str(&render_connection(connection, &theme_colors)?);
     }
-    
+
     svg.push_str("</svg>");
     Ok(svg)
 }
@@ -91,12 +87,12 @@ fn render_component(
     component: &PositionedComponent,
     colors: &ThemeColors,
     style: &SvgStyle,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> anyhow::Result<String> {
     let mut svg = String::new();
-    
+
     // Determine which symbol to use based on the component type and style
     let symbol_path = get_component_symbol(&component.component.component_type, style)?;
-    
+
     // Apply transformations for position and rotation
     let transform = format!(
         "translate({} {}) rotate({} {} {})",
@@ -106,18 +102,15 @@ fn render_component(
         0.0, // rotation center x
         0.0  // rotation center y
     );
-    
-    svg.push_str(&format!(
-        "<g transform=\"{}\">\n",
-        transform
-    ));
-    
+
+    svg.push_str(&format!("<g transform=\"{}\">\n", transform));
+
     // Draw the component symbol
     svg.push_str(&format!(
         "<path d=\"{}\" class=\"component\" />\n",
         symbol_path
     ));
-    
+
     // Add component label if available
     if let Some(ref label) = component.component.label {
         svg.push_str(&format!(
@@ -125,7 +118,7 @@ fn render_component(
             label
         ));
     }
-    
+
     // Add component value if available
     if let Some(ref value) = component.component.value {
         svg.push_str(&format!(
@@ -133,7 +126,7 @@ fn render_component(
             value
         ));
     }
-    
+
     svg.push_str("</g>\n");
     Ok(svg)
 }
@@ -141,7 +134,7 @@ fn render_component(
 fn get_component_symbol(
     component_type: &crate::parser::ComponentType,
     style: &SvgStyle,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> anyhow::Result<String> {
     let symbol = match component_type {
         crate::parser::ComponentType::Resistor => {
             match style {
@@ -508,16 +501,16 @@ fn get_component_symbol(
             }
         },
     };
-    
+
     Ok(symbol.to_string())
 }
 
 fn render_connection(
     connection: &PositionedConnection,
     colors: &ThemeColors,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> anyhow::Result<String> {
     let mut svg = String::new();
-    
+
     // Create path for the connection
     if connection.path.len() > 1 {
         let mut path_data = String::from("M ");
@@ -528,20 +521,16 @@ fn render_connection(
                 path_data.push_str(&format!(" L {} {}", point.x, point.y));
             }
         }
-        
-        svg.push_str(&format!(
-            "<path d=\"{}\" class=\"wire\" />\n",
-            path_data
-        ));
+
+        svg.push_str(&format!("<path d=\"{}\" class=\"wire\" />\n", path_data));
     } else {
         // Direct line if only two points
         svg.push_str(&format!(
             "<line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"wire\" />\n",
-            connection.from.x, connection.from.y,
-            connection.to.x, connection.to.y
+            connection.from.x, connection.from.y, connection.to.x, connection.to.y
         ));
     }
-    
+
     Ok(svg)
 }
 
@@ -557,9 +546,9 @@ fn rotation_to_degrees(rotation: &Rotation) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::calculate_layout;
     use crate::parser::{Circuit, Component, ComponentType, Rotation as ParserRotation};
-    use crate::layout::{calculate_layout};
-    
+
     #[test]
     fn test_render_to_svg() {
         let circuit = Circuit {
@@ -586,11 +575,11 @@ mod tests {
             connections: vec![],
             nets: vec![],
         };
-        
+
         let layout = calculate_layout(&circuit).expect("Failed to calculate layout");
         let svg = render_to_svg(&layout, SvgTheme::Light, SvgStyle::Ieee);
         assert!(svg.is_ok());
-        
+
         let svg_content = svg.unwrap();
         assert!(svg_content.contains("svg"));
         assert!(svg_content.contains("path"));
