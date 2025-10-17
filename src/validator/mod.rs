@@ -186,18 +186,18 @@ fn has_pin(component: &Component, pin_name: &str) -> bool {
     }
 }
 
-fn check_unconnected_pins(circuit: &Circuit) -> Result<(), ValidationError> {
+fn check_unconnected_pins(_circuit: &Circuit) -> Result<(), ValidationError> {
     // This would check for pins that should have connections but don't
     // For now, we'll check for power pins that aren't connected to ground or power
     Ok(())
 }
 
-fn check_short_circuits(circuit: &Circuit) -> Result<(), ValidationError> {
+fn check_short_circuits(_circuit: &Circuit) -> Result<(), ValidationError> {
     // This would check for direct connections between power and ground or other conflicting voltages
     Ok(())
 }
 
-fn check_floating_inputs(circuit: &Circuit) -> Result<(), ValidationError> {
+fn check_floating_inputs(_circuit: &Circuit) -> Result<(), ValidationError> {
     // This would check for inputs that don't have a defined voltage level
     Ok(())
 }

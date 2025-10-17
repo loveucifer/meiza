@@ -1,5 +1,5 @@
-use crate::layout::{Layout, Point, PositionedComponent, PositionedConnection, Rotation};
-use std::collections::HashMap;
+use crate::layout::{Layout, PositionedComponent, PositionedConnection, Rotation};
+
 
 #[derive(Debug, Clone)]
 pub enum SvgTheme {
@@ -85,7 +85,7 @@ fn get_theme_colors(theme: &SvgTheme) -> ThemeColors {
 
 fn render_component(
     component: &PositionedComponent,
-    colors: &ThemeColors,
+    _colors: &ThemeColors,
     style: &SvgStyle,
 ) -> anyhow::Result<String> {
     let mut svg = String::new();
@@ -507,7 +507,7 @@ fn get_component_symbol(
 
 fn render_connection(
     connection: &PositionedConnection,
-    colors: &ThemeColors,
+    _colors: &ThemeColors,
 ) -> anyhow::Result<String> {
     let mut svg = String::new();
 

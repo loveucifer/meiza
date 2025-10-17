@@ -37,15 +37,11 @@ pub enum PinType {
 }
 
 // Component templates registry
-static mut COMPONENT_TEMPLATES: Option<HashMap<String, ComponentTemplate>> = None;
+use std::sync::OnceLock;
+static COMPONENT_TEMPLATES: OnceLock<HashMap<String, ComponentTemplate>> = OnceLock::new();
 
 pub fn get_component_templates() -> &'static HashMap<String, ComponentTemplate> {
-    unsafe {
-        if COMPONENT_TEMPLATES.is_none() {
-            COMPONENT_TEMPLATES = Some(initialize_component_templates());
-        }
-        COMPONENT_TEMPLATES.as_ref().unwrap()
-    }
+    COMPONENT_TEMPLATES.get_or_init(|| initialize_component_templates())
 }
 
 fn initialize_component_templates() -> HashMap<String, ComponentTemplate> {
