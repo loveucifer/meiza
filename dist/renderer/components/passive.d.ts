@@ -1,0 +1,23 @@
+import { ComponentSymbol } from './index';
+export declare const resistorSymbol: ComponentSymbol;
+export declare const capacitorSymbol: ComponentSymbol;
+export declare const inductorSymbol: ComponentSymbol;
+export declare const voltageSymbol: ComponentSymbol;
+export declare const currentSymbol: ComponentSymbol;
+export declare const diodeSymbol: ComponentSymbol;
+export declare const ledSymbol: ComponentSymbol;
+export declare const npnSymbol: ComponentSymbol;
+export declare const pnpSymbol: ComponentSymbol;
+export declare const nmosSymbol: ComponentSymbol;
+export declare const pmosSymbol: ComponentSymbol;
+export declare const opampSymbol: ComponentSymbol;
+export declare const andSymbol: ComponentSymbol;
+export declare const orSymbol: ComponentSymbol;
+export declare const notSymbol: ComponentSymbol;
+export declare const nandSymbol: ComponentSymbol;
+export declare const norSymbol: ComponentSymbol;
+export declare const xorSymbol: ComponentSymbol;
+export declare const groundSymbol: ComponentSymbol;
+export declare const batterySymbol: ComponentSymbol;
+export declare const switchSymbol: ComponentSymbol;
+//# sourceMappingURL=passive.d.ts.map
