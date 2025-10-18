@@ -1,11 +1,13 @@
+/**
+ * Validation error types for the Circuit Description Language
+ */
+import { Circuit } from '../parser/ast';
 export interface ValidationError {
-    type: string;
     message: string;
-    severity: 'error' | 'warning';
+    line?: number;
+    column?: number;
 }
-export declare class ValidationError extends Error {
-    type: string;
-    severity: 'error' | 'warning';
-    constructor(type: string, message: string, severity?: 'error' | 'warning');
+export interface ValidationRule {
+    validate(circuit: Circuit): ValidationError[];
 }
 //# sourceMappingURL=errors.d.ts.map

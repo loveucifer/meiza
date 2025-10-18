@@ -1,0 +1,31 @@
+# Common Emitter Amplifier
+
+circuit common_emitter_amplifier
+
+# Transistor
+Q1 npn base collector emitter
+
+# Bias resistors
+R1 resistor 33k Vcc base
+R2 resistor 10k base GND
+
+# Load resistor
+R3 resistor 2.2k Vcc collector
+
+# Emitter resistor
+R4 resistor 1k emitter GND
+
+# Coupling capacitors
+C1 capacitor 10uF input base
+C2 capacitor 100uF collector output
+
+# Bypass capacitor
+C3 capacitor 100uF emitter GND
+
+# Supply voltage
+VCC voltage 12V Vcc
+GND1 ground GND
+
+# Input and output
+VIN voltage 10mV input
+VOUT output output

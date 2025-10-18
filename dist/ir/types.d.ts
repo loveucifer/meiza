@@ -1,4 +1,6 @@
-import { Position } from '../parser/ast';
+/**
+ * IR (Intermediate Representation) type definitions for Circuit Description Language
+ */
 export interface BoundingBox {
     x: number;
     y: number;
@@ -7,8 +9,7 @@ export interface BoundingBox {
 }
 export interface Pin {
     name: string;
-    position: Position;
-    type: 'input' | 'output' | 'power' | 'ground';
+    position: [number, number];
 }
 export interface ComponentIR {
     id: string;
@@ -21,18 +22,14 @@ export interface ComponentIR {
     value?: string;
 }
 export interface WireIR {
-    from: Position;
-    to: Position;
-    path: Position[];
+    from: [number, number];
+    to: [number, number];
+    path: [number, number][];
 }
 export interface CircuitIR {
     name: string;
     components: ComponentIR[];
     wires: WireIR[];
     bounds: BoundingBox;
-    metadata: {
-        width: number;
-        height: number;
-    };
 }
 //# sourceMappingURL=types.d.ts.map

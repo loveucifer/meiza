@@ -1,27 +1,28 @@
+/**
+ * Runtime interpreter for Circuit Description Language
+ */
 import { Circuit, Component } from '../parser/ast';
 export interface Netlist {
-    components: Component[];
-    nets: {
-        [netName: string]: string[];
-    };
-    connections: {
-        [componentId: string]: {
-            [pin: number]: string;
-        };
+    [nodeName: string]: Component[];
+}
+export interface NodeVoltages {
+    [nodeName: string]: number;
+}
+export interface SimulationResult {
+    nodeVoltages: NodeVoltages;
+    componentCurrents: {
+        [componentId: string]: number;
     };
 }
-export declare class CircuitRuntime {
+export declare class Runtime {
     private circuit;
-    private netlist;
-    constructor(circuit: Circuit);
-    buildNetlist(): Netlist;
-    findConnectedComponents(node: string): Component[];
-    getNodes(): string[];
+    constructor();
+    loadCircuit(circuit: Circuit): void;
+    getNetlist(): Netlist;
+    getConnectedComponents(node: string): Component[];
+    identifyNodes(): string[];
+    calculateNodeVoltages(): NodeVoltages;
     detectShortCircuits(): string[][];
-    calculateNodeVoltages(): {
-        [node: string]: number | null;
-    };
-    private hasGround;
+    analyzeCircuit(): SimulationResult;
 }
-export declare function runCircuit(circuit: Circuit): CircuitRuntime;
 //# sourceMappingURL=runtime.d.ts.map

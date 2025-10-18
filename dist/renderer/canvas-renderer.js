@@ -1,192 +1,103 @@
 "use strict";
+/**
+ * Canvas renderer for Circuit Description Language
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CanvasRenderer = void 0;
-exports.renderCanvas = renderCanvas;
-const renderer_1 = require("./renderer");
-const layout_1 = require("./layout");
-class CanvasRenderer extends renderer_1.BaseRenderer {
-    render(circuit, options) {
-        // This method would render directly to a canvas, but since we can't access
-        // the DOM in this context, we'll provide the implementation
-        throw new Error('Canvas rendering requires DOM access. Use renderCanvasToContext instead.');
+const components_1 = require("./components");
+class CanvasRenderer {
+    constructor(options) {
+        this.options = {
+            theme: 'light',
+            showLabels: true,
+            showValues: true,
+            ...options
+        };
     }
-    renderToContext(circuit, context, options) {
-        const { width, height, theme = 'light', showLabels = true, showValues = true } = options;
-        const colors = this.applyTheme(theme);
-        // Apply layout to get final positions
-        const layoutResult = (0, layout_1.layoutCircuit)(circuit.components, circuit.wires);
+    render(circuitIR, canvas) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Could not get 2D context from canvas');
+        }
+        // Set canvas dimensions
+        canvas.width = circuitIR.bounds.width;
+        canvas.height = circuitIR.bounds.height;
         // Clear canvas
-        context.fillStyle = colors.background;
-        context.fillRect(0, 0, width, height);
+        this.clearCanvas(ctx, circuitIR.bounds);
         // Render wires first (so components appear on top)
-        for (const wire of layoutResult.wires) {
-            this.renderWireToContext(wire, context, colors.wire);
+        for (const wire of circuitIR.wires) {
+            this.renderWire(ctx, wire);
         }
         // Render components
-        for (const component of layoutResult.components) {
-            this.renderComponentToContext(component, context, colors.component, showLabels, showValues);
+        for (const component of circuitIR.components) {
+            this.renderComponent(ctx, component);
         }
     }
-    renderWireToContext(wire, context, color) {
-        context.strokeStyle = color;
-        context.lineWidth = 2;
-        context.beginPath();
-        if (wire.path && wire.path.length > 0) {
-            // Multi-segment wire following the path
-            const firstPoint = wire.path[0];
-            context.moveTo(firstPoint.x, firstPoint.y);
-            for (let i = 1; i < wire.path.length; i++) {
-                const point = wire.path[i];
-                context.lineTo(point.x, point.y);
-            }
-        }
-        else {
-            // Simple straight line between from and to
-            context.moveTo(wire.from.x, wire.from.y);
-            context.lineTo(wire.to.x, wire.to.y);
-        }
-        context.stroke();
+    clearCanvas(ctx, bounds) {
+        const bgColor = this.options.theme === 'dark' ? '#1e1e1e' : '#ffffff';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, bounds.width, bounds.height);
     }
-    renderComponentToContext(component, context, color, showLabels, showValues) {
-        const [x, y] = component.position;
+    renderComponent(ctx, component) {
+        const symbol = (0, components_1.getComponentSymbol)(component.type);
+        if (!symbol) {
+            console.warn(`Unknown component type: ${component.type}`);
+            return;
+        }
         // Save the current context state
-        context.save();
-        // Apply rotation if needed
-        if (component.rotation !== 0) {
-            context.translate(x, y);
-            context.rotate(component.rotation * Math.PI / 180); // Convert degrees to radians
-            context.translate(-x, -y);
-        }
-        // Draw the component symbol using the path data
-        context.strokeStyle = color;
-        context.lineWidth = 2;
-        context.beginPath();
-        // Parse and draw the SVG path data using Canvas API
-        this.drawPathData(context, component.symbol);
-        context.stroke();
+        ctx.save();
+        // Apply transformations (position and rotation)
+        const [x, y] = component.position;
+        ctx.translate(x, y);
+        ctx.rotate(component.rotation * Math.PI / 180); // Convert degrees to radians
+        // Draw the component symbol
+        this.drawSymbol(ctx, symbol.symbol);
         // Draw label if enabled
-        if (showLabels) {
-            context.fillStyle = color;
-            context.font = '12px Arial';
-            context.textAlign = 'center';
-            context.textBaseline = 'bottom';
-            context.fillText(component.label, x, y - 15);
+        if (this.options.showLabels) {
+            ctx.fillStyle = this.options.theme === 'dark' ? '#ffffff' : '#000000';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(component.label, 50, -10);
         }
-        // Draw value if enabled
-        if (showValues && component.value) {
-            context.fillStyle = color;
-            context.font = '10px Arial';
-            context.textAlign = 'center';
-            context.textBaseline = 'top';
-            context.fillText(component.value, x, y + 15);
+        // Draw value if present and enabled
+        if (component.value && this.options.showValues) {
+            ctx.fillStyle = this.options.theme === 'dark' ? '#ffffff' : '#000000';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(component.value, 50, 15);
         }
         // Restore the context state
-        context.restore();
+        ctx.restore();
     }
-    drawPathData(context, pathData) {
-        // This is a simplified path parser for SVG path data
-        // A full implementation would be more complex
-        const commands = pathData.trim().split(/(?=[A-Za-z])/);
-        let currentX = 0;
-        let currentY = 0;
-        for (const command of commands) {
-            if (!command)
-                continue;
-            const type = command.charAt(0);
-            const paramsStr = command.substring(1).trim();
-            const params = paramsStr ? paramsStr.split(/[\s,]+/).map(p => parseFloat(p)) : [];
-            switch (type) {
-                case 'M': // Move to
-                    if (params.length >= 2) {
-                        currentX = params[0];
-                        currentY = params[1];
-                        context.moveTo(currentX, currentY);
-                    }
-                    break;
-                case 'L': // Line to
-                    if (params.length >= 2) {
-                        currentX = params[0];
-                        currentY = params[1];
-                        context.lineTo(currentX, currentY);
-                    }
-                    break;
-                case 'H': // Horizontal line to
-                    if (params.length >= 1) {
-                        currentX = params[0];
-                        context.lineTo(currentX, currentY);
-                    }
-                    break;
-                case 'V': // Vertical line to
-                    if (params.length >= 1) {
-                        currentY = params[0];
-                        context.lineTo(currentX, currentY);
-                    }
-                    break;
-                case 'Z': // Close path
-                    context.closePath();
-                    break;
-                case 'C': // Cubic Bézier curve
-                    if (params.length >= 6) {
-                        const x1 = params[0], y1 = params[1];
-                        const x2 = params[2], y2 = params[3];
-                        const x = params[4], y = params[5];
-                        context.bezierCurveTo(x1, y1, x2, y2, x, y);
-                        currentX = x;
-                        currentY = y;
-                    }
-                    break;
-                case 'S': // Smooth cubic Bézier curve
-                    if (params.length >= 4) {
-                        // Simplified: treat as cubic Bézier with inferred control point
-                        const x2 = params[0], y2 = params[1];
-                        const x = params[2], y = params[3];
-                        // For simplicity, we'll approximate with a line
-                        context.lineTo(x, y);
-                        currentX = x;
-                        currentY = y;
-                    }
-                    break;
-                case 'Q': // Quadratic Bézier curve
-                    if (params.length >= 4) {
-                        const x1 = params[0], y1 = params[1];
-                        const x = params[2], y = params[3];
-                        context.quadraticCurveTo(x1, y1, x, y);
-                        currentX = x;
-                        currentY = y;
-                    }
-                    break;
-                case 'T': // Smooth quadratic Bézier curve
-                    if (params.length >= 2) {
-                        const x = params[0], y = params[1];
-                        // For simplicity, we'll approximate with a line
-                        context.lineTo(x, y);
-                        currentX = x;
-                        currentY = y;
-                    }
-                    break;
-                case 'A': // Elliptical arc
-                    if (params.length >= 7) {
-                        // For simplicity, we'll approximate with a line
-                        const x = params[5], y = params[6];
-                        context.lineTo(x, y);
-                        currentX = x;
-                        currentY = y;
-                    }
-                    break;
-            }
-        }
+    drawSymbol(ctx, symbol) {
+        // Set drawing style
+        ctx.strokeStyle = this.options.theme === 'dark' ? '#8080ff' : '#000000';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        // Create a path from the SVG path string
+        const path = new Path2D(symbol);
+        ctx.stroke(path);
+    }
+    renderWire(ctx, wire) {
+        // Set wire drawing style
+        ctx.strokeStyle = this.options.theme === 'dark' ? '#a0a0a0' : '#000000';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'round';
+        // For now, draw a simple line - in a more advanced implementation
+        // we could use the path property to draw the routed wire
+        const [x1, y1] = wire.from;
+        const [x2, y2] = wire.to;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+    updateOptions(options) {
+        this.options = { ...this.options, ...options };
     }
 }
 exports.CanvasRenderer = CanvasRenderer;
-function renderCanvas(circuit, canvas, options = { width: 800, height: 600 }) {
-    const renderer = new CanvasRenderer();
-    const context = canvas.getContext('2d');
-    if (!context) {
-        throw new Error('Could not get 2D context from canvas element');
-    }
-    // Set canvas dimensions
-    canvas.width = options.width;
-    canvas.height = options.height;
-    renderer.renderToContext(circuit, context, options);
-}
 //# sourceMappingURL=canvas-renderer.js.map

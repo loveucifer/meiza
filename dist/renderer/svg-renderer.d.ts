@@ -1,9 +1,21 @@
+/**
+ * SVG renderer for Circuit Description Language
+ */
 import { CircuitIR } from '../ir/types';
-import { BaseRenderer, RendererOptions } from './renderer';
-export declare class SVGRenderer extends BaseRenderer {
-    render(circuit: CircuitIR, options: RendererOptions): string;
-    private renderWire;
-    private renderComponent;
+export interface SVGRendererOptions {
+    width?: number;
+    height?: number;
+    theme?: 'light' | 'dark';
+    showLabels?: boolean;
+    showValues?: boolean;
 }
-export declare function renderSVG(circuit: CircuitIR, options: RendererOptions): string;
+export declare class SVGRenderer {
+    private options;
+    constructor(options?: SVGRendererOptions);
+    render(circuitIR: CircuitIR): string;
+    private getStyles;
+    private renderComponent;
+    private renderWire;
+    updateOptions(options: SVGRendererOptions): void;
+}
 //# sourceMappingURL=svg-renderer.d.ts.map

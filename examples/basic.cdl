@@ -1,0 +1,9 @@
+# Simple RC Filter
+
+circuit lowpass_filter
+
+R1 resistor 1k in out
+C1 capacitor 100nF out gnd
+V1 voltage 5V in gnd
+
+GND ground gnd

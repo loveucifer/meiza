@@ -1,134 +1,124 @@
 "use strict";
+/**
+ * Runtime interpreter for Circuit Description Language
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CircuitRuntime = void 0;
-exports.runCircuit = runCircuit;
-class CircuitRuntime {
-    constructor(circuit) {
-        this.netlist = null;
+exports.Runtime = void 0;
+class Runtime {
+    constructor() {
+        this.circuit = null;
+    }
+    loadCircuit(circuit) {
         this.circuit = circuit;
     }
-    buildNetlist() {
-        const nets = {};
-        const connections = {};
-        // Initialize nets and connections
+    getNetlist() {
+        if (!this.circuit) {
+            throw new Error('No circuit loaded');
+        }
+        const netlist = {};
+        // Initialize netlist with all nodes
         for (const component of this.circuit.components) {
-            connections[component.id] = {};
-            for (let i = 0; i < component.nodes.length; i++) {
-                const node = component.nodes[i];
-                if (!nets[node]) {
-                    nets[node] = [];
+            for (const node of component.nodes) {
+                if (!netlist[node]) {
+                    netlist[node] = [];
                 }
-                // Record this component's connection to this node
-                nets[node].push(`${component.id}:${i}`);
-                connections[component.id][i] = node;
+                netlist[node].push(component);
             }
         }
-        this.netlist = {
-            components: this.circuit.components,
-            nets,
-            connections
-        };
-        return this.netlist;
+        return netlist;
     }
-    findConnectedComponents(node) {
-        if (!this.netlist) {
-            this.buildNetlist();
+    getConnectedComponents(node) {
+        if (!this.circuit) {
+            throw new Error('No circuit loaded');
         }
-        const connectedComponents = [];
-        const nodeConnections = this.netlist.nets[node] || [];
-        for (const connection of nodeConnections) {
-            const [componentId] = connection.split(':');
-            const component = this.circuit.components.find(c => c.id === componentId);
-            if (component) {
-                connectedComponents.push(component);
+        const connected = [];
+        for (const component of this.circuit.components) {
+            if (component.nodes.includes(node)) {
+                connected.push(component);
             }
         }
-        return connectedComponents;
+        return connected;
     }
-    getNodes() {
-        if (!this.netlist) {
-            this.buildNetlist();
+    identifyNodes() {
+        if (!this.circuit) {
+            throw new Error('No circuit loaded');
         }
-        return Object.keys(this.netlist.nets);
-    }
-    detectShortCircuits() {
-        if (!this.netlist) {
-            this.buildNetlist();
-        }
-        const shortCircuits = [];
-        for (const [netName, connections] of Object.entries(this.netlist.nets)) {
-            // A short circuit could occur if there are voltage sources with different values
-            // connected directly to the same net
-            const voltageSources = connections.filter(conn => {
-                const parts = conn.split(':');
-                if (parts.length === 0)
-                    return false; // Guard against empty strings
-                const compId = parts[0];
-                const comp = this.circuit.components.find(c => c.id === compId);
-                return comp && comp.type === 'voltage';
-            });
-            if (voltageSources.length > 1) {
-                // Multiple voltage sources on the same net - potential short circuit
-                const componentIds = voltageSources.map(conn => {
-                    const parts = conn.split(':');
-                    return parts[0] || ''; // Default to empty string if split doesn't work
-                });
-                shortCircuits.push(componentIds);
+        const nodes = new Set();
+        for (const component of this.circuit.components) {
+            for (const node of component.nodes) {
+                nodes.add(node);
             }
         }
-        return shortCircuits;
+        return Array.from(nodes);
     }
     calculateNodeVoltages() {
-        if (!this.netlist) {
-            this.buildNetlist();
+        if (!this.circuit) {
+            throw new Error('No circuit loaded');
         }
-        // Initialize all node voltages to null
         const nodeVoltages = {};
-        for (const node of Object.keys(this.netlist.nets)) {
-            nodeVoltages[node] = null;
+        const netlist = this.getNetlist();
+        // Find ground node (should be 0V)
+        const groundComponents = this.circuit.components.filter(c => c.type === 'ground');
+        if (groundComponents.length === 0) {
+            throw new Error('No ground node found in circuit');
         }
-        // Find ground node first (voltage = 0)
-        const groundComponent = this.circuit.components.find(c => c.type === 'ground');
-        if (groundComponent) {
-            // Ground connects to a node, set that node's voltage to 0
-            for (const node of groundComponent.nodes) {
+        // Assign 0V to ground node
+        for (const ground of groundComponents) {
+            for (const node of ground.nodes) {
                 nodeVoltages[node] = 0;
             }
         }
-        // Simple DC analysis: find voltage sources and propagate their voltages
-        // This is a basic implementation - a full simulator would be much more complex
-        const voltageComponents = this.circuit.components.filter(c => c.type === 'voltage' && c.value !== undefined);
-        for (const voltageComp of voltageComponents) {
-            if (voltageComp.nodes.length >= 2) {
-                const posNode = voltageComp.nodes[0]; // Assume first node is positive
-                const negNode = voltageComp.nodes[1]; // Assume second node is negative
-                // If we know the voltage of one node, we can calculate the other
-                if (nodeVoltages[posNode] !== null) {
-                    nodeVoltages[negNode] = nodeVoltages[posNode] - (voltageComp.value?.value || 0);
+        // Simple DC analysis - find voltage sources and assign voltages
+        const voltageSources = this.circuit.components.filter(c => c.type === 'voltage');
+        for (const vs of voltageSources) {
+            if (vs.value && vs.nodes.length === 2) {
+                const [posNode, negNode] = vs.nodes;
+                // If the negative node is grounded, assign voltage to positive
+                if (nodeVoltages[negNode] === 0) {
+                    nodeVoltages[posNode] = vs.value.value;
                 }
-                else if (nodeVoltages[negNode] !== null) {
-                    nodeVoltages[posNode] = nodeVoltages[negNode] + (voltageComp.value?.value || 0);
+                else if (nodeVoltages[negNode] !== undefined) {
+                    nodeVoltages[posNode] = nodeVoltages[negNode] + vs.value.value;
                 }
-                else {
-                    // If neither is known, and we have a ground reference, make an assumption
-                    if (nodeVoltages[posNode] === null && voltageComp.value) {
-                        // For now, set the positive node to the voltage value if ground is at 0
-                        // This is a simplification for DC analysis
-                        if (this.hasGround()) {
-                            nodeVoltages[posNode] = voltageComp.value.value;
-                        }
-                    }
-                }
+                // In a more complete implementation, we would solve the complete system of equations
             }
         }
         return nodeVoltages;
     }
-    hasGround() {
-        return this.circuit.components.some(c => c.type === 'ground');
+    detectShortCircuits() {
+        if (!this.circuit) {
+            throw new Error('No circuit loaded');
+        }
+        const shortCircuits = [];
+        const netlist = this.getNetlist();
+        // For each node, check if there are conflicting voltage sources
+        for (const [node, components] of Object.entries(netlist)) {
+            const voltageSources = components.filter(c => c.type === 'voltage');
+            if (voltageSources.length > 1) {
+                // Multiple voltage sources connected to the same node - possible short circuit
+                const connectedIds = voltageSources.map(c => c.id);
+                shortCircuits.push([node, ...connectedIds]);
+            }
+        }
+        return shortCircuits;
+    }
+    analyzeCircuit() {
+        if (!this.circuit) {
+            throw new Error('No circuit loaded');
+        }
+        // For now, just return basic analysis results
+        const nodeVoltages = this.calculateNodeVoltages();
+        const componentCurrents = {};
+        // For a more complete implementation, we would perform circuit simulation
+        for (const component of this.circuit.components) {
+            // Default to 0 current for all components
+            componentCurrents[component.id] = 0;
+        }
+        return {
+            nodeVoltages,
+            componentCurrents
+        };
     }
 }
-exports.CircuitRuntime = CircuitRuntime;
-function runCircuit(circuit) {
-    return new CircuitRuntime(circuit);
-}
+exports.Runtime = Runtime;
 //# sourceMappingURL=runtime.js.map

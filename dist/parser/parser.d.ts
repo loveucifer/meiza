@@ -1,16 +1,20 @@
+/**
+ * Recursive descent parser for the Circuit Description Language
+ */
 import { Circuit } from './ast';
 export declare class Parser {
-    private lexer;
-    private currentToken;
     private tokens;
     private position;
     constructor(input: string);
-    private advance;
-    private match;
-    private consume;
-    private parseValue;
-    private parseComponent;
     parse(): Circuit;
+    private parseComponent;
+    private isComponentDeclaration;
+    private isComponentTypeToken;
+    private isValueToken;
+    private isUnitToken;
+    private getDefaultUnit;
+    private currentToken;
+    private advance;
+    private consume;
 }
-export declare function parseCircuit(input: string): Circuit;
 //# sourceMappingURL=parser.d.ts.map

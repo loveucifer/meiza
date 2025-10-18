@@ -1,11 +1,20 @@
+/**
+ * Canvas renderer for Circuit Description Language
+ */
 import { CircuitIR } from '../ir/types';
-import { BaseRenderer, RendererOptions } from './renderer';
-export declare class CanvasRenderer extends BaseRenderer {
-    render(circuit: CircuitIR, options: RendererOptions): void;
-    renderToContext(circuit: CircuitIR, context: CanvasRenderingContext2D, options: RendererOptions): void;
-    private renderWireToContext;
-    private renderComponentToContext;
-    private drawPathData;
+export interface CanvasRendererOptions {
+    theme?: 'light' | 'dark';
+    showLabels?: boolean;
+    showValues?: boolean;
 }
-export declare function renderCanvas(circuit: CircuitIR, canvas: HTMLCanvasElement, options?: RendererOptions): void;
+export declare class CanvasRenderer {
+    private options;
+    constructor(options?: CanvasRendererOptions);
+    render(circuitIR: CircuitIR, canvas: HTMLCanvasElement): void;
+    private clearCanvas;
+    private renderComponent;
+    private drawSymbol;
+    private renderWire;
+    updateOptions(options: CanvasRendererOptions): void;
+}
 //# sourceMappingURL=canvas-renderer.d.ts.map

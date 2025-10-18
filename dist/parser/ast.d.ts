@@ -1,11 +1,15 @@
+/**
+ * AST (Abstract Syntax Tree) definitions for the Circuit Description Language
+ */
 export interface Position {
     x: number;
     y: number;
 }
-export type ComponentType = 'resistor' | 'capacitor' | 'inductor' | 'voltage' | 'current' | 'diode' | 'led' | 'npn' | 'pnp' | 'nmos' | 'pmos' | 'opamp' | 'and' | 'or' | 'not' | 'nand' | 'nor' | 'xor' | 'ground' | 'battery' | 'switch';
-export interface Value {
-    value: number;
-    unit?: string;
+export interface Circuit {
+    name: string;
+    components: Component[];
+    wires: Wire[];
+    comments: Comment[];
 }
 export interface Component {
     id: string;
@@ -20,19 +24,13 @@ export interface Wire {
     from: string;
     to: string;
 }
-export interface Circuit {
-    name: string;
-    components: Component[];
-    wires: Wire[];
+export interface Value {
+    value: number;
+    unit: string;
 }
-export interface SourceLocation {
-    start: {
-        line: number;
-        column: number;
-    };
-    end: {
-        line: number;
-        column: number;
-    };
+export interface Comment {
+    position: Position;
+    text: string;
 }
+export type ComponentType = 'resistor' | 'capacitor' | 'inductor' | 'voltage' | 'current' | 'diode' | 'led' | 'npn' | 'pnp' | 'nmos' | 'pmos' | 'opamp' | 'and' | 'or' | 'not' | 'nand' | 'nor' | 'xor' | 'ground' | 'battery' | 'switch';
 //# sourceMappingURL=ast.d.ts.map

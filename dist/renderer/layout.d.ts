@@ -1,15 +1,16 @@
-import { ComponentIR, WireIR } from '../ir/types';
-export interface LayoutResult {
-    components: ComponentIR[];
-    wires: WireIR[];
-}
-export declare class GridLayout {
+/**
+ * Layout engine for Circuit Description Language renderer
+ */
+import { CircuitIR } from '../ir/types';
+export declare class LayoutEngine {
     private gridSize;
     private margin;
-    constructor(gridSize?: number, margin?: number);
-    layout(components: ComponentIR[], wires: WireIR[]): LayoutResult;
+    layout(circuitIR: CircuitIR): CircuitIR;
     private positionComponents;
     private routeWires;
+    private calculateWirePath;
+    snapToGrid(position: [number, number]): [number, number];
+    getGridSize(): number;
+    setGridSize(size: number): void;
 }
-export declare function layoutCircuit(components: ComponentIR[], wires: WireIR[]): LayoutResult;
 //# sourceMappingURL=layout.d.ts.map

@@ -1,0 +1,28 @@
+# Logic Gate Circuit
+
+circuit logic_example
+
+# Inputs
+A voltage 5V input_a
+B voltage 5V input_b
+GND1 ground GND
+
+# Logic gates
+U1 and input_a input_b output_and
+U2 or input_a input_b output_or
+U3 not input_a output_not_a
+U4 nand input_a input_b output_nand
+U5 nor input_a input_b output_nor
+U6 xor input_a input_b output_xor
+
+# Output indicators (simulated with LEDs)
+LED_AND led output_and GND
+LED_OR led output_or GND
+LED_NOT led output_not_a GND
+LED_NAND led output_nand GND
+LED_NOR led output_nor GND
+LED_XOR led output_xor GND
+
+# Pull down resistors for inputs
+R1 resistor 10k input_a GND
+R2 resistor 10k input_b GND

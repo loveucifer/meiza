@@ -1,0 +1,26 @@
+# Active Filter Example
+
+circuit sallen_key_filter
+
+# Opamp
+U1 opamp inverting_input output Vcc GND
+
+# Resistors
+R1 resistor 1k input inverting_input
+R2 resistor 1k inverting_input output
+R3 resistor 10k non_inverting_input GND  # Feedback to ground
+
+# Capacitors
+C1 capacitor 100nF input non_inverting_input
+C2 capacitor 100nF non_inverting_input output
+
+# Voltage sources
+V1 voltage 12V Vcc
+V2 voltage -12V GND
+
+# Input and output
+VIN voltage 1V input
+GND1 ground GND
+
+# Output connection
+OUT output output

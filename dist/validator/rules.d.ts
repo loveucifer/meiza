@@ -1,40 +1,37 @@
+/**
+ * Validation rules for Circuit Description Language
+ */
 import { Circuit } from '../parser/ast';
-import { ValidationError } from './errors';
+export interface ValidationError {
+    message: string;
+    line?: number;
+    column?: number;
+}
 export interface ValidationRule {
-    name: string;
     validate(circuit: Circuit): ValidationError[];
 }
-export declare class UniqueComponentIdsRule implements ValidationRule {
-    name: string;
+export declare class UniqueComponentIdRule implements ValidationRule {
     validate(circuit: Circuit): ValidationError[];
 }
 export declare class ValidComponentTypeRule implements ValidationRule {
-    name: string;
     validate(circuit: Circuit): ValidationError[];
 }
-export declare class ValidNodeCountRule implements ValidationRule {
-    name: string;
-    validate(circuit: Circuit): ValidationError[];
-}
-export declare class ValidValueFormatRule implements ValidationRule {
-    name: string;
+export declare class ValidNodeConnectionsRule implements ValidationRule {
     validate(circuit: Circuit): ValidationError[];
 }
 export declare class NoFloatingNodesRule implements ValidationRule {
-    name: string;
     validate(circuit: Circuit): ValidationError[];
 }
 export declare class GroundNodeExistsRule implements ValidationRule {
-    name: string;
     validate(circuit: Circuit): ValidationError[];
 }
-export declare class NoDirectShortCircuitRule implements ValidationRule {
-    name: string;
+export declare class ValidValueFormatRule implements ValidationRule {
     validate(circuit: Circuit): ValidationError[];
 }
-export declare class ValidComponentConnectionsRule implements ValidationRule {
-    name: string;
+export declare class ComponentExistsRule implements ValidationRule {
     validate(circuit: Circuit): ValidationError[];
 }
-export declare const allValidationRules: ValidationRule[];
+export declare class CircuitNameRule implements ValidationRule {
+    validate(circuit: Circuit): ValidationError[];
+}
 //# sourceMappingURL=rules.d.ts.map
